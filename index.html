@@ -73,7 +73,7 @@ h1{font-size:clamp(1.6rem,5vw,2.4rem);background:linear-gradient(90deg,#ff9a9e,#
 .tile.hint{border-color:var(--hint);box-shadow:0 0 0 3px rgba(239,68,68,.55),0 0 12px rgba(239,68,68,.4);animation:pulse .55s ease infinite}
 .tile img{width:90%;height:90%;object-fit:cover;border-radius:4px;pointer-events:none;display:block}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-#linkCanvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5}
+#linkCanvas{position:absolute;left:0;top:0;pointer-events:none;z-index:5}
 .toast{position:absolute;top:20%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:8px 16px;
   border-radius:10px;font-size:.95rem;opacity:0;pointer-events:none;z-index:16;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -491,6 +491,10 @@ function renderBoard(){
   maxH = Math.max(80, maxH - 2);
   const gap = (Math.min(maxW,maxH) < 400) ? 1 : 2;
   const pad = 1;
+  // Thin outer-ring budget so border paths aren't clipped by board-wrap overflow
+  const ringReserve = Math.max(8, Math.min(16, Math.floor(Math.min(maxW, maxH) / 36)));
+  maxW = Math.max(100, maxW - ringReserve*2);
+  maxH = Math.max(70, maxH - ringReserve*2);
   const cellW=Math.floor((maxW - pad*2 - gap*(COLS-1)) / COLS);
   const cellH=Math.floor((maxH - pad*2 - gap*(ROWS-1)) / ROWS);
   const size=Math.max(14, Math.min(cellW, cellH, 80));
@@ -499,6 +503,8 @@ function renderBoard(){
   boardEl.style.width=(size*COLS + gap*(COLS-1) + pad*2)+'px';
   boardEl.style.height=(size*ROWS + gap*(ROWS-1) + pad*2)+'px';
   state._tileSize = size;
+  state._gap = gap;
+  state._pad = pad;
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const t=state.board[r][c];
@@ -522,50 +528,74 @@ function renderBoard(){
   updateSelUI();
 }
 function syncCanvas(){
+  // Size/position the overlay in the board's local layout space (never use
+  // getBoundingClientRect — under force-landscape CSS rotate that returns the
+  // viewport AABB and misplaces the line). Extend by a thin outer-ring margin
+  // so border-path segments stay visible inside board-wrap.
   const boardEl=$('board'), canvas=$('linkCanvas'), wrap=boardEl.parentElement;
-  canvas.width=wrap.clientWidth; canvas.height=wrap.clientHeight;
-  canvas.style.width=wrap.clientWidth+'px'; canvas.style.height=wrap.clientHeight+'px';
+  const size=state._tileSize||36;
+  const gap=state._gap||2;
+  const ring=Math.max(8, Math.ceil(size*0.5 + gap + 4));
+  state._ring=ring;
+  const bw=boardEl.offsetWidth, bh=boardEl.offsetHeight;
+  const cssW=bw+ring*2, cssH=bh+ring*2;
+  const dpr=Math.min(window.devicePixelRatio||1, 3);
+  state._dpr=dpr;
+  canvas.style.left=(boardEl.offsetLeft - ring)+'px';
+  canvas.style.top=(boardEl.offsetTop - ring)+'px';
+  canvas.style.width=cssW+'px';
+  canvas.style.height=cssH+'px';
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  const ctx=canvas.getContext('2d');
+  if(ctx) ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-function tileCenter(r,c){
-  const boardEl=$('board');
-  const el=boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-  if(!el) return null;
-  const wrap=boardEl.parentElement.getBoundingClientRect();
-  const er=el.getBoundingClientRect();
-  return {x:er.left-wrap.left+er.width/2, y:er.top-wrap.top+er.height/2};
+/** Cell center in board-local coords (origin = board border-box top-left). */
+function cellCenterLocal(r,c){
+  const size=state._tileSize||36;
+  const gap=state._gap||2;
+  const pad=state._pad||1;
+  return {
+    x: pad + c*(size+gap) + size/2,
+    y: pad + r*(size+gap) + size/2
+  };
 }
 function drawPath(path){
+  syncCanvas();
   const canvas=$('linkCanvas');
   const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!path||path.length<2) return;
-  const pts=[];
-  for(const [r,c] of path){
-    if(r<0||c<0||r>=ROWS||c>=COLS){
-      const rr=Math.max(0,Math.min(ROWS-1,r));
-      const cc=Math.max(0,Math.min(COLS-1,c));
-      const base=tileCenter(rr,cc);
-      if(!base) continue;
-      const el=$('board').querySelector(`[data-r="${rr}"][data-c="${cc}"]`);
-      const sz=el?el.offsetWidth:36;
-      pts.push({
-        x:base.x+(c<0?-sz:c>=COLS?sz:0),
-        y:base.y+(r<0?-sz:r>=ROWS?sz:0)
-      });
-    } else {
-      const p=tileCenter(r,c); if(p) pts.push(p);
-    }
-  }
-  if(pts.length<2) return;
+  const dpr=state._dpr||1;
+  const ring=state._ring||0;
+  // Clear in CSS pixels after setTransform(dpr)
+  ctx.save();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr);
+  if(!path||path.length<2){ ctx.restore(); return; }
+  const pts=path.map(([r,c])=>{
+    const p=cellCenterLocal(r,c);
+    return {x:p.x+ring, y:p.y+ring};
+  });
   ctx.strokeStyle='#22c55e';
-  ctx.lineWidth=3.5;
+  ctx.lineWidth=Math.max(3, Math.min(5, (state._tileSize||36)*0.12));
   ctx.lineCap='round'; ctx.lineJoin='round';
-  ctx.shadowColor='rgba(34,197,94,.85)'; ctx.shadowBlur=8;
+  ctx.shadowColor='rgba(34,197,94,.9)'; ctx.shadowBlur=6;
   ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
   for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
   ctx.stroke();
+  ctx.restore();
+  state._lastPathPts=pts;
+  state._lastPath=path;
 }
-function clearPath(){ const c=$('linkCanvas'); c.getContext('2d').clearRect(0,0,c.width,c.height); }
+function clearPath(){
+  if(state._holdPath) return;
+  const c=$('linkCanvas');
+  const ctx=c.getContext('2d');
+  const dpr=state._dpr||1;
+  ctx.save();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,c.width/dpr,c.height/dpr);
+  ctx.restore();
+}
 function updateSelUI(){
   document.querySelectorAll('.tile.selected').forEach(e=>e.classList.remove('selected'));
   if(state.selected){
@@ -628,7 +658,7 @@ function onTileClick(){
     updateHUD();
     if(countTiles()===0){ levelClear(); return; }
     ensureMovesOrGameOver();
-  }, 180);
+  }, 320);
 }
 
 function ensureMovesOrGameOver(){
@@ -877,7 +907,10 @@ window.__LLK__ = {
   setState:(patch)=>Object.assign(state,patch),
   startGame, startLevel, petIconHtml, PET_ICONS, PET_NAMES,
   ensureMovesOrGameOver, updateForceLandscape, enterLandscapeMode, isTouchDevice,
-  getTileSize:()=> state._tileSize || (document.querySelector("#board .tile:not(.empty)")||{}).offsetWidth || 0
+  getTileSize:()=> state._tileSize || (document.querySelector("#board .tile:not(.empty)")||{}).offsetWidth || 0,
+  renderBoard, drawPath, clearPath, cellCenterLocal, syncCanvas,
+  holdPath:(v)=>{ state._holdPath=!!v; },
+  getLastPathPts:()=> state._lastPathPts || null
 };
 })();
 </script>
