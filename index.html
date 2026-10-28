@@ -40,6 +40,7 @@ body.force-landscape #app{
 }
 .screen{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:960px;gap:14px;z-index:2}
 .screen.active{display:flex}
+#gameScreen.active{max-width:none;width:100%;height:100%;flex:1;min-height:0;gap:3px;justify-content:flex-start}
 h1{font-size:clamp(1.6rem,5vw,2.4rem);background:linear-gradient(90deg,#ff9a9e,#fecfef,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;letter-spacing:.08em}
 .sub{color:var(--muted);font-size:.9rem;margin-top:-6px}
 .btn{border:none;border-radius:12px;padding:10px 22px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.04em;
@@ -53,16 +54,16 @@ h1{font-size:clamp(1.6rem,5vw,2.4rem);background:linear-gradient(90deg,#ff9a9e,#
 .pets-preview .mini{width:34px;height:34px;border-radius:7px;overflow:hidden;background:var(--tile);border:1px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center}
 .pets-preview .mini img{width:92%;height:92%;object-fit:cover;border-radius:5px}
 #gameScreen{height:100%;justify-content:flex-start;padding-top:2px;max-width:100%}
-.hud{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;max-width:920px;padding:6px 10px;background:var(--panel);
-  border-radius:10px;border:1px solid rgba(255,255,255,.08);font-size:.82rem;overflow-x:auto}
+.hud{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;width:100%;max-width:none;padding:4px 8px;background:var(--panel);
+  border-radius:8px;border:1px solid rgba(255,255,255,.08);font-size:.78rem;overflow-x:auto;flex:0 0 auto}
 .hud .tag{background:rgba(233,69,96,.35);border:1px solid rgba(255,182,193,.4);border-radius:6px;padding:2px 8px;white-space:nowrap}
 .hud .stat{white-space:nowrap}
 .hud .stat b{color:var(--gold)}
 .hud .spacer{flex:1;min-width:8px}
 .hud .score{color:var(--gold);font-weight:800;font-size:1rem;white-space:nowrap}
-.timer-wrap{width:100%;max-width:920px;height:10px;background:#3a2a5a;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.timer-wrap{width:100%;max-width:none;height:8px;background:#3a2a5a;border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.1);flex:0 0 auto}
 .timer-bar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);border-radius:6px;transition:width .15s linear}
-.board-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;width:100%;max-width:920px;min-height:0}
+.board-wrap{position:relative;flex:1 1 auto;display:flex;align-items:center;justify-content:center;width:100%;max-width:none;min-height:0;overflow:hidden}
 #board{display:grid;gap:2px;padding:3px;background:rgba(0,0,0,.28);border-radius:10px;border:2px solid rgba(255,182,193,.22);position:relative;touch-action:none}
 .tile{aspect-ratio:1;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;
   background:linear-gradient(145deg,#f7f0e6,#e8dfd2);border:2px solid rgba(255,255,255,.4);
@@ -87,19 +88,29 @@ h1{font-size:clamp(1.6rem,5vw,2.4rem);background:linear-gradient(90deg,#ff9a9e,#
 @keyframes float{from{transform:translateY(110vh) rotate(0)}to{transform:translateY(-10vh) rotate(360deg)}}
 #pauseCover{position:absolute;inset:0;background:rgba(10,5,25,.85);z-index:12;display:none;align-items:center;justify-content:center;border-radius:10px}
 #pauseCover.show{display:flex}
-.hud{flex-wrap:wrap;row-gap:4px}
+.hud{flex-wrap:nowrap;row-gap:2px}
 #board,.tile,img{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .tile{touch-action:manipulation}
-@media(max-height:420px),(max-width:740px){
-  .hud{font-size:.68rem;gap:4px 6px;padding:3px 6px}
-  .btn-sec,.btn-ghost{padding:4px 8px;font-size:.72rem;min-height:28px}
-  .timer-wrap{height:8px}
-  h1{font-size:1.4rem}
-  .screen{gap:8px}
+#board{padding:2px;border-width:1px;border-radius:6px}
+body.force-landscape #orientRoot{
+  /* ensure layout box is landscape logical size */
+  box-sizing:border-box;
 }
-@media(max-height:360px){
-  .hud{font-size:.62rem;padding:2px 4px}
-  .pets-preview .mini{width:28px;height:28px}
+@media(max-height:480px),(max-width:900px){
+  .hud{font-size:.65rem;gap:3px 5px;padding:2px 5px;border-radius:6px}
+  .hud .tag{padding:1px 5px;font-size:.6rem}
+  .btn-sec,.btn-ghost{padding:3px 7px;font-size:.68rem;min-height:26px;border-radius:6px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+  .timer-wrap{height:6px}
+  .hud .score{font-size:.85rem}
+  h1{font-size:1.35rem}
+  .screen{gap:8px}
+  #gameScreen.active{gap:2px}
+}
+@media(max-height:380px){
+  .hud{font-size:.58rem;padding:1px 4px;gap:2px 4px}
+  .btn-sec,.btn-ghost{padding:2px 6px;font-size:.62rem;min-height:24px}
+  .timer-wrap{height:5px}
+  .pets-preview .mini{width:26px;height:26px}
 }
 </style>
 </head>
@@ -463,15 +474,31 @@ function renderBoard(){
   const boardEl=$('board');
   boardEl.style.gridTemplateColumns=`repeat(${COLS},1fr)`;
   boardEl.innerHTML='';
-  const wrap=boardEl.parentElement.getBoundingClientRect();
-  const maxW=Math.max(120, wrap.width-4);
-  const maxH=Math.max(100, wrap.height-4);
-  const gap=Math.max(1, Math.min(2, Math.floor(Math.min(maxW,maxH)/200)));
-  const cellW=Math.floor((maxW-gap*(COLS-1)-4)/COLS);
-  const cellH=Math.floor((maxH-gap*(ROWS-1)-4)/ROWS);
-  const size=Math.max(16, Math.min(cellW, cellH, 64));
+  const wrapEl=boardEl.parentElement;
+  // Use layout box (clientWidth/Height), NOT getBoundingClientRect — after CSS
+  // force-landscape rotate, getBoundingClientRect returns the portrait AABB.
+  let maxW = wrapEl.clientWidth || wrapEl.offsetWidth || 0;
+  let maxH = wrapEl.clientHeight || wrapEl.offsetHeight || 0;
+  if(maxW < 160 || maxH < 100){
+    const root = $('orientRoot') || document.documentElement;
+    const gs = $('gameScreen');
+    const chrome = (gs?.querySelector('.hud')?.offsetHeight||28)
+      + (gs?.querySelector('.timer-wrap')?.offsetHeight||6) + 8;
+    maxW = Math.max(maxW, root.clientWidth || window.innerWidth);
+    maxH = Math.max(maxH, (root.clientHeight || Math.min(window.innerWidth, window.innerHeight)) - chrome);
+  }
+  maxW = Math.max(120, maxW - 2);
+  maxH = Math.max(80, maxH - 2);
+  const gap = (Math.min(maxW,maxH) < 400) ? 1 : 2;
+  const pad = 1;
+  const cellW=Math.floor((maxW - pad*2 - gap*(COLS-1)) / COLS);
+  const cellH=Math.floor((maxH - pad*2 - gap*(ROWS-1)) / ROWS);
+  const size=Math.max(14, Math.min(cellW, cellH, 80));
   boardEl.style.gap=gap+'px';
-  boardEl.style.width=(size*COLS+gap*(COLS-1)+6)+'px';
+  boardEl.style.padding=pad+'px';
+  boardEl.style.width=(size*COLS + gap*(COLS-1) + pad*2)+'px';
+  boardEl.style.height=(size*ROWS + gap*(ROWS-1) + pad*2)+'px';
+  state._tileSize = size;
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const t=state.board[r][c];
@@ -703,7 +730,9 @@ function updateForceLandscape(){
   const phoneLike = isTouchDevice() || Math.min(window.innerWidth, window.innerHeight) <= 500;
   const need = portrait && phoneLike && !state._lockedLandscape;
   document.body.classList.toggle('force-landscape', !!need);
-  requestAnimationFrame(()=>{ if($('gameScreen')&&$('gameScreen').classList.contains('active')) renderBoard(); });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if($('gameScreen')&&$('gameScreen').classList.contains('active')) renderBoard();
+  }));
 }
 async function enterLandscapeMode(){
   state._lockedLandscape=false;
@@ -847,7 +876,8 @@ window.__LLK__ = {
   setBoard:(b)=>{ state.board=b; },
   setState:(patch)=>Object.assign(state,patch),
   startGame, startLevel, petIconHtml, PET_ICONS, PET_NAMES,
-  ensureMovesOrGameOver, updateForceLandscape, enterLandscapeMode, isTouchDevice
+  ensureMovesOrGameOver, updateForceLandscape, enterLandscapeMode, isTouchDevice,
+  getTileSize:()=> state._tileSize || (document.querySelector("#board .tile:not(.empty)")||{}).offsetWidth || 0
 };
 })();
 </script>
