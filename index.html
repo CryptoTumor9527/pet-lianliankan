@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="萌宠连连看">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a0a2e">
+<meta name="llk-build" content="20261029-fullscreen-toggle">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -55,11 +56,13 @@ h1{font-size:clamp(1.6rem,5vw,2.4rem);background:linear-gradient(90deg,#ff9a9e,#
 .pets-preview .mini img{width:92%;height:92%;object-fit:cover;border-radius:5px}
 #gameScreen{height:100%;justify-content:flex-start;padding-top:2px;max-width:100%}
 .hud{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;width:100%;max-width:none;padding:4px 8px;background:var(--panel);
-  border-radius:8px;border:1px solid rgba(255,255,255,.08);font-size:.78rem;overflow-x:auto;flex:0 0 auto}
+  border-radius:8px;border:1px solid rgba(255,255,255,.08);font-size:.78rem;overflow:visible;flex:0 0 auto}
+.hud-left{display:flex;flex-wrap:nowrap;align-items:center;gap:inherit;flex:1 1 auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hud-right{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto;padding-left:6px}
 .hud .tag{background:rgba(233,69,96,.35);border:1px solid rgba(255,182,193,.4);border-radius:6px;padding:2px 8px;white-space:nowrap}
 .hud .stat{white-space:nowrap}
 .hud .stat b{color:var(--gold)}
-.hud .spacer{flex:1;min-width:8px}
+.hud .spacer{display:none}
 .hud .score{color:var(--gold);font-weight:800;font-size:1rem;white-space:nowrap}
 .timer-wrap{width:100%;max-width:none;height:8px;background:#3a2a5a;border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.1);flex:0 0 auto}
 .timer-bar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);border-radius:6px;transition:width .15s linear}
@@ -104,28 +107,34 @@ body.force-landscape #orientRoot{
 .level-pick .lv-btn .lv-name{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .level-pick .lv-btn .lv-meta{font-size:.62rem;color:rgba(245,230,255,.65)}
 .pick-label{color:var(--muted);font-size:.82rem;margin-top:2px}
-.hud .countdown{font-weight:800;font-size:1rem;color:#7dd3fc;font-variant-numeric:tabular-nums;letter-spacing:.02em;white-space:nowrap;min-width:3.2em;text-align:right}
-.hud .countdown.warn{color:#fbbf24}
-.hud .countdown.danger{color:#f87171}
+.hud .countdown{display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:1.05rem;color:#e0f2fe;
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;white-space:nowrap;min-width:4.6em;text-align:center;
+  background:rgba(14,116,144,.55);border:1px solid rgba(125,211,252,.65);border-radius:999px;padding:3px 10px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.25),0 2px 8px rgba(14,165,233,.25);line-height:1.2}
+.hud .countdown::before{content:"⏱";font-size:.95em;line-height:1}
+.hud .countdown.warn{color:#fff7ed;background:rgba(180,83,9,.7);border-color:rgba(251,191,36,.8);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 10px rgba(251,191,36,.35)}
+.hud .countdown.danger{color:#fff;background:rgba(185,28,28,.78);border-color:rgba(248,113,113,.9);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 12px rgba(239,68,68,.45);animation:pulse .7s ease infinite}
 @media(max-height:480px),(max-width:900px){
   .level-pick{gap:5px;max-width:100%}
   .level-pick .lv-btn{padding:5px 7px;border-radius:8px}
   .level-pick .lv-btn .lv-num{font-size:.72rem}
   .level-pick .lv-btn .lv-name{font-size:.62rem}
   .level-pick .lv-btn .lv-meta{font-size:.55rem}
-  .hud .countdown{font-size:.85rem}
+  .hud .countdown{font-size:.92rem;padding:2px 8px}
+  .hud-right{gap:6px}
 }
 @media(max-height:380px){
   .level-pick{gap:4px}
   .level-pick .lv-btn{padding:4px 6px}
-  .hud .countdown{font-size:.78rem}
+  .hud .countdown{font-size:.85rem;padding:2px 7px}
 }
 @media(max-height:480px),(max-width:900px){
   .hud{font-size:.65rem;gap:3px 5px;padding:2px 5px;border-radius:6px}
   .hud .tag{padding:1px 5px;font-size:.6rem}
   .btn-sec,.btn-ghost{padding:3px 7px;font-size:.68rem;min-height:26px;border-radius:6px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
   .timer-wrap{height:6px}
-  .hud .score{font-size:.85rem}
+  .hud .score{font-size:.9rem}
+  .hud-right{gap:5px;padding-left:4px}
   h1{font-size:1.35rem}
   .screen{gap:8px}
   #gameScreen.active{gap:2px}
@@ -150,22 +159,27 @@ body.force-landscape #orientRoot{
     <p class="pick-label">选择关卡</p>
     <div class="level-pick" id="levelPick"></div>
     <button class="btn btn-primary" id="btnStart">从第1关开始</button>
+    <button class="btn btn-ghost" id="btnFullscreenStart" title="全屏">全屏</button>
     <p style="color:var(--muted);font-size:.75rem">最高分：<b id="bestScoreDisp">0</b></p>
   </div>
 
   <div class="screen" id="gameScreen">
     <div class="hud">
-      <span class="stat">第<b id="levelDisp">1</b>关</span>
-      <span class="tag" id="levelName">新手试玩</span>
-      <span class="stat"><b id="livesDisp">5</b>点生命</span>
-      <span class="stat"><b id="hintDisp">3</b>次提示</span>
-      <button class="btn btn-sec" id="btnHint">提示</button>
-      <button class="btn btn-sec" id="btnShuffle">重排</button>
-      <button class="btn btn-ghost" id="btnPause">暂停</button>
-      <button class="btn btn-ghost" id="btnMute">🔊</button>
-      <span class="spacer"></span>
-      <span class="stat countdown" id="timeDisp" title="剩余时间">02:15</span>
-      <span class="score" id="scoreDisp">0</span>
+      <div class="hud-left">
+        <span class="stat">第<b id="levelDisp">1</b>关</span>
+        <span class="tag" id="levelName">新手试玩</span>
+        <span class="stat"><b id="livesDisp">5</b>点生命</span>
+        <span class="stat"><b id="hintDisp">3</b>次提示</span>
+        <button class="btn btn-sec" id="btnHint">提示</button>
+        <button class="btn btn-sec" id="btnShuffle">重排</button>
+        <button class="btn btn-ghost" id="btnPause">暂停</button>
+        <button class="btn btn-ghost" id="btnMute">🔊</button>
+        <button class="btn btn-ghost" id="btnFullscreen" title="全屏">全屏</button>
+      </div>
+      <div class="hud-right">
+        <span class="countdown" id="timeDisp" title="剩余时间" aria-label="剩余时间">02:15</span>
+        <span class="score" id="scoreDisp" title="得分">0</span>
+      </div>
     </div>
     <div class="timer-wrap"><div class="timer-bar" id="timerBar"></div></div>
     <div class="board-wrap">
@@ -798,13 +812,40 @@ function updateForceLandscape(){
     if($('gameScreen')&&$('gameScreen').classList.contains('active')) renderBoard();
   }));
 }
-async function enterLandscapeMode(){
-  state._lockedLandscape=false;
+function isFullscreenActive(){
+  return !!(document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.msFullscreenElement);
+}
+async function requestAppFullscreen(){
+  const el = document.documentElement;
   try{
-    const el = document.documentElement;
     if(el.requestFullscreen) await el.requestFullscreen();
     else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if(el.msRequestFullscreen) el.msRequestFullscreen();
   }catch(e){}
+}
+async function exitAppFullscreen(){
+  try{
+    if(document.exitFullscreen) await document.exitFullscreen();
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if(document.msExitFullscreen) document.msExitFullscreen();
+  }catch(e){}
+}
+async function toggleAppFullscreen(){
+  if(isFullscreenActive()) await exitAppFullscreen();
+  else await requestAppFullscreen();
+  updateFullscreenButtons();
+}
+function updateFullscreenButtons(){
+  const label = isFullscreenActive() ? '退出全屏' : '全屏';
+  const a=$('btnFullscreen'), b=$('btnFullscreenStart');
+  if(a){ a.textContent=label; a.title=label; }
+  if(b){ b.textContent=label; b.title=label; }
+}
+async function enterLandscapeMode(){
+  // 开局不再自动全屏（Win 桌面会误进全屏）；横屏交给 orientation.lock / CSS 兜底
+  state._lockedLandscape=false;
   try{
     if(screen.orientation && screen.orientation.lock){
       await screen.orientation.lock('landscape');
@@ -876,6 +917,9 @@ $('btnMute').onclick=()=>{
   state.muted=!state.muted;
   $('btnMute').textContent=state.muted?'🔇':'🔊';
 };
+function onFullscreenBtn(){ toggleAppFullscreen(); }
+if($('btnFullscreen')) $('btnFullscreen').onclick=onFullscreenBtn;
+if($('btnFullscreenStart')) $('btnFullscreenStart').onclick=onFullscreenBtn;
 $('btnHint').onclick=()=>{
   if(state.hints<=0||!state.running||state.paused) return;
   const m=findAnyMove();
@@ -905,7 +949,13 @@ function onViewportChange(){
 }
 window.addEventListener('resize', onViewportChange);
 window.addEventListener('orientationchange', ()=> setTimeout(onViewportChange, 120));
-document.addEventListener('fullscreenchange', onViewportChange);
+function onFullscreenChange(){
+  updateFullscreenButtons();
+  onViewportChange();
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+document.addEventListener('MSFullscreenChange', onFullscreenChange);
 if(screen.orientation) screen.orientation.addEventListener('change', ()=> setTimeout(onViewportChange, 80));
 // Prevent double-tap zoom on board
 document.addEventListener('gesturestart', e=>e.preventDefault());
@@ -936,6 +986,7 @@ document.addEventListener('touchend', function(e){
   }
   $('bestScoreDisp').textContent=getBest();
   updateForceLandscape();
+  updateFullscreenButtons();
   const deco=$('bgDeco');
   const em=['🐱','🐶','🐰','🐼','🐸','🦊','🐯','🦁'];
   for(let i=0;i<8;i++){
