@@ -96,6 +96,30 @@ body.force-landscape #orientRoot{
   /* ensure layout box is landscape logical size */
   box-sizing:border-box;
 }
+
+.level-pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:420px;margin:4px 0 2px}
+.level-pick .lv-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:var(--text);font-family:inherit;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.level-pick .lv-btn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.level-pick .lv-btn .lv-num{font-weight:800;color:var(--gold);font-size:.85rem}
+.level-pick .lv-btn .lv-name{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.level-pick .lv-btn .lv-meta{font-size:.62rem;color:rgba(245,230,255,.65)}
+.pick-label{color:var(--muted);font-size:.82rem;margin-top:2px}
+.hud .countdown{font-weight:800;font-size:1rem;color:#7dd3fc;font-variant-numeric:tabular-nums;letter-spacing:.02em;white-space:nowrap;min-width:3.2em;text-align:right}
+.hud .countdown.warn{color:#fbbf24}
+.hud .countdown.danger{color:#f87171}
+@media(max-height:480px),(max-width:900px){
+  .level-pick{gap:5px;max-width:100%}
+  .level-pick .lv-btn{padding:5px 7px;border-radius:8px}
+  .level-pick .lv-btn .lv-num{font-size:.72rem}
+  .level-pick .lv-btn .lv-name{font-size:.62rem}
+  .level-pick .lv-btn .lv-meta{font-size:.55rem}
+  .hud .countdown{font-size:.85rem}
+}
+@media(max-height:380px){
+  .level-pick{gap:4px}
+  .level-pick .lv-btn{padding:4px 6px}
+  .hud .countdown{font-size:.78rem}
+}
 @media(max-height:480px),(max-width:900px){
   .hud{font-size:.65rem;gap:3px 5px;padding:2px 5px;border-radius:6px}
   .hud .tag{padding:1px 5px;font-size:.6rem}
@@ -122,8 +146,10 @@ body.force-landscape #orientRoot{
     <h1>🐾 萌宠连连看</h1>
     <p class="sub">连接相同的小动物，清空棋盘吧！</p>
     <div class="pets-preview" id="previewPets"></div>
-    <p style="color:var(--muted);font-size:.8rem;max-width:360px;text-align:center;line-height:1.55">点击两只相同的萌宠，若可用不超过两次转弯的路径相连即可消除。共九关，越玩越有趣！</p>
-    <button class="btn btn-primary" id="btnStart">开始游戏</button>
+    <p style="color:var(--muted);font-size:.8rem;max-width:420px;text-align:center;line-height:1.55">点击两只相同的萌宠，若可用不超过两次转弯的路径相连即可消除。共九关，可自由选关开局！</p>
+    <p class="pick-label">选择关卡</p>
+    <div class="level-pick" id="levelPick"></div>
+    <button class="btn btn-primary" id="btnStart">从第1关开始</button>
     <p style="color:var(--muted);font-size:.75rem">最高分：<b id="bestScoreDisp">0</b></p>
   </div>
 
@@ -138,6 +164,7 @@ body.force-landscape #orientRoot{
       <button class="btn btn-ghost" id="btnPause">暂停</button>
       <button class="btn btn-ghost" id="btnMute">🔊</button>
       <span class="spacer"></span>
+      <span class="stat countdown" id="timeDisp" title="剩余时间">02:15</span>
       <span class="score" id="scoreDisp">0</span>
     </div>
     <div class="timer-wrap"><div class="timer-bar" id="timerBar"></div></div>
@@ -212,15 +239,16 @@ const PET_NAMES = ['猫', '狗', '兔', '熊猫', '青蛙', '仓鼠', '小鸡', 
 const LEVELS = [
   // hints/lives: carry-over rules applied in startLevel (not absolute per-level grants)
   // L3 name is「上下分离」but playtests showed columns sliding DOWN (no half-split) — use 'down'.
-  { name:'新手试玩', types:27, time:90, gravity:null },
-  { name:'增加难度', types:33, time:90, gravity:null },
-  { name:'上下分离', types:35, time:90, gravity:'down' },
-  { name:'左右分离', types:35, time:90, gravity:'splitLR' },
-  { name:'向左对齐', types:35, time:90, gravity:'left' },
-  { name:'重力',     types:35, time:90, gravity:'down' },
-  { name:'飘向天空', types:35, time:90, gravity:'up' },
-  { name:'向右对齐', types:35, time:90, gravity:'right' },
-  { name:'中心集中', types:35, time:90, gravity:'centerH' }
+  // time = original × 1.5 (was 90 → 135)
+  { name:'新手试玩', types:27, time:135, gravity:null },
+  { name:'增加难度', types:33, time:135, gravity:null },
+  { name:'上下分离', types:35, time:135, gravity:'down' },
+  { name:'左右分离', types:35, time:135, gravity:'splitLR' },
+  { name:'向左对齐', types:35, time:135, gravity:'left' },
+  { name:'重力',     types:35, time:135, gravity:'down' },
+  { name:'飘向天空', types:35, time:135, gravity:'up' },
+  { name:'向右对齐', types:35, time:135, gravity:'right' },
+  { name:'中心集中', types:35, time:135, gravity:'centerH' }
 ];
 const COLS = 14, ROWS = 10;
 const MATCH_SCORE = 10;
@@ -240,7 +268,7 @@ let state = {
   level:0, score:0, hints:0, lives:0,
   board:[], selected:null,
   running:false, paused:false, animating:false,
-  timeLeft:0, timeMax:90, timerId:null, muted:false
+  timeLeft:0, timeMax:135, timerId:null, muted:false
 };
 
 const $ = id => document.getElementById(id);
@@ -603,6 +631,12 @@ function updateSelUI(){
     if(el) el.classList.add('selected');
   }
 }
+function formatTime(sec){
+  const s=Math.max(0, Math.ceil(sec));
+  const m=Math.floor(s/60);
+  const r=s%60;
+  return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0');
+}
 function updateHUD(){
   const lv=LEVELS[state.level];
   $('levelDisp').textContent=state.level+1;
@@ -614,6 +648,12 @@ function updateHUD(){
   $('btnShuffle').disabled=state.lives<=0||!state.running||state.paused;
   const pct=state.timeMax>0?(state.timeLeft/state.timeMax)*100:0;
   $('timerBar').style.width=Math.max(0,pct)+'%';
+  const td=$('timeDisp');
+  if(td){
+    td.textContent=formatTime(state.timeLeft);
+    td.classList.toggle('warn', state.timeLeft>0 && state.timeLeft<=30);
+    td.classList.toggle('danger', state.timeLeft>0 && state.timeLeft<=10);
+  }
 }
 function showToast(msg, ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('show');
@@ -664,22 +704,16 @@ function onTileClick(){
 function ensureMovesOrGameOver(){
   if(findAnyMove()) return;
   if(countTiles()===0) return;
-  if(state.lives>0){
-    state.lives--;
-    shuffleRemaining();
-    // keep shuffling until a move exists or give up after many tries
-    let g=0;
-    while(!findAnyMove() && countTiles()>0 && g<60){ shuffleRemaining(); g++; }
-    renderBoard();
-    updateHUD();
-    showToast('无解，消耗1点生命重排');
-    sfxShuffle();
-    if(!findAnyMove() && state.lives<=0){ gameOver(); }
-    else if(!findAnyMove() && state.lives>0){
-      // recursive spend if still no move
-      ensureMovesOrGameOver();
-    }
-  } else {
+  // 无解自动重排：不扣生命（手动「重排」按钮仍扣生命）
+  shuffleRemaining();
+  let g=0;
+  while(!findAnyMove() && countTiles()>0 && g<80){ shuffleRemaining(); g++; }
+  renderBoard();
+  updateHUD();
+  showToast('无解，已自动重排');
+  sfxShuffle();
+  if(!findAnyMove() && countTiles()>0){
+    // 极罕见：多次重排仍无解
     gameOver();
   }
 }
@@ -718,15 +752,15 @@ function gameOver(){
   $('endOverlay').classList.remove('hidden');
 }
 
-function startLevel(idx){
+function startLevel(idx, fresh){
   state.level=idx;
   const cfg=LEVELS[idx];
   // Cap types by available icons
   const types=Math.min(cfg.types, PET_ICONS.length);
   state.board=buildBoard(types);
   state.selected=null;
-  // Carry-over: L1 starts at HINTS_START/LIVES_START; later levels leftover + bonus
-  if(idx===0){
+  // fresh / 第1关：满额生命与提示；过关进入下一关：剩余 + 关卡奖励
+  if(fresh || idx===0){
     state.hints = HINTS_START;
     state.lives = LIVES_START;
   } else {
@@ -782,12 +816,15 @@ async function enterLandscapeMode(){
   updateForceLandscape();
 }
 function startGame(){
+  startGameAt(0);
+}
+function startGameAt(idx){
   ensureAudio();
   enterLandscapeMode();
   state.score=0;
   state.hints=0;
   state.lives=0;
-  startLevel(0);
+  startLevel(idx, true);
 }
 function startTimer(){
   stopTimer();
@@ -886,6 +923,17 @@ document.addEventListener('touchend', function(e){
     d.className='mini'; d.innerHTML=petIconHtml(i);
     box.appendChild(d);
   }
+  const pick=$('levelPick');
+  if(pick){
+    LEVELS.forEach((lv,i)=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='lv-btn';
+      b.innerHTML='<span class="lv-num">第'+(i+1)+'关</span><span class="lv-name">'+lv.name+'</span><span class="lv-meta">'+lv.time+'秒 · '+lv.types+'种</span>';
+      b.onclick=()=>startGameAt(i);
+      pick.appendChild(b);
+    });
+  }
   $('bestScoreDisp').textContent=getBest();
   updateForceLandscape();
   const deco=$('bgDeco');
@@ -905,7 +953,7 @@ window.__LLK__ = {
   getState:()=>state,
   setBoard:(b)=>{ state.board=b; },
   setState:(patch)=>Object.assign(state,patch),
-  startGame, startLevel, petIconHtml, PET_ICONS, PET_NAMES,
+  startGame, startGameAt, startLevel, petIconHtml, PET_ICONS, PET_NAMES, formatTime,
   ensureMovesOrGameOver, updateForceLandscape, enterLandscapeMode, isTouchDevice,
   getTileSize:()=> state._tileSize || (document.querySelector("#board .tile:not(.empty)")||{}).offsetWidth || 0,
   renderBoard, drawPath, clearPath, cellCenterLocal, syncCanvas,
