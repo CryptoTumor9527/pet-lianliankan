@@ -177,7 +177,7 @@ body.force-landscape #orientRoot{
         <button class="btn btn-ghost" id="btnFullscreen" title="全屏">全屏</button>
       </div>
       <div class="hud-right">
-        <span class="countdown" id="timeDisp" title="剩余时间" aria-label="剩余时间">03:00</span>
+        <span class="countdown" id="timeDisp" title="剩余时间" aria-label="剩余时间">04:00</span>
         <span class="score" id="scoreDisp" title="得分">0</span>
       </div>
     </div>
@@ -253,16 +253,16 @@ const PET_NAMES = ['猫', '狗', '兔', '熊猫', '青蛙', '仓鼠', '小鸡', 
 const LEVELS = [
   // hints/lives: carry-over rules applied in startLevel (not absolute per-level grants)
   // L3 name is「上下分离」but playtests showed columns sliding DOWN (no half-split) — use 'down'.
-  // 全部关卡统一 180 秒
-  { name:'新手试玩', types:27, time:180, gravity:null },
-  { name:'增加难度', types:33, time:180, gravity:null },
-  { name:'上下分离', types:35, time:180, gravity:'down' },
-  { name:'左右分离', types:35, time:180, gravity:'splitLR' },
-  { name:'向左对齐', types:35, time:180, gravity:'left' },
-  { name:'重力',     types:35, time:180, gravity:'down' },
-  { name:'飘向天空', types:35, time:180, gravity:'up' },
-  { name:'向右对齐', types:35, time:180, gravity:'right' },
-  { name:'中心集中', types:35, time:180, gravity:'centerH' }
+  // 全部关卡统一 240 秒
+  { name:'新手试玩', types:27, time:240, gravity:null },
+  { name:'增加难度', types:33, time:240, gravity:null },
+  { name:'上下分离', types:35, time:240, gravity:'down' },
+  { name:'左右分离', types:35, time:240, gravity:'splitLR' },
+  { name:'向左对齐', types:35, time:240, gravity:'left' },
+  { name:'重力',     types:35, time:240, gravity:'down' },
+  { name:'飘向天空', types:35, time:240, gravity:'up' },
+  { name:'向右对齐', types:35, time:240, gravity:'right' },
+  { name:'中心集中', types:35, time:240, gravity:'centerH' }
 ];
 const COLS = 14, ROWS = 10;
 const MATCH_SCORE = 10;
@@ -282,7 +282,7 @@ let state = {
   level:0, score:0, hints:0, lives:0,
   board:[], selected:null,
   running:false, paused:false, animating:false,
-  timeLeft:0, timeMax:180, timerId:null, muted:false
+  timeLeft:0, timeMax:240, timerId:null, muted:false
 };
 
 const $ = id => document.getElementById(id);
